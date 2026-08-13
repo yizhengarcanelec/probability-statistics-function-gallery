@@ -817,7 +817,7 @@ html[data-theme="dark"] .footer-note { color: #add1df; }
     <div class="sidebar-scroll">
       <div class="section-head">
         <div class="section-title">按函数分类展开</div>
-        <div id="matchBadge" class="section-badge">19 个函数</div>
+        <div id="matchBadge" class="section-badge">14 个函数</div>
       </div>
       <div id="categoryList"></div>
     </div>
@@ -886,7 +886,7 @@ html[data-theme="dark"] .footer-note { color: #add1df; }
         <p id="paramHelper"></p>
       </div>
       <div id="controlsGrid" class="controls-grid"></div>
-      <div class="footer-note">提示：本页中的几何分布和负二项分布采用教材中最常见的“按试验次数计数”的定义；多项分布固定展示三分类情形，以便用三维方式直观展示联合概率质量。</div>
+      <div class="footer-note">提示：本页中的几何分布采用教材中最常见的“按试验次数计数”的定义；多项分布固定展示三分类情形，以便用三维方式直观展示联合概率质量。</div>
     </section>
   </main>
 </div>
@@ -5488,7 +5488,7 @@ return Plotly;
       memory: [
         '图像只有两个柱子：x=0 和 x=1，是所有离散分布里最容易识别的一类。',
         '当 p 增大时，概率质量会明显向 x=1 方向转移。',
-        '它是二项分布、几何分布、负二项分布等更复杂模型的最小构件。'
+        '它是二项分布、几何分布等更复杂模型的最小构件。'
       ],
       paramHelper() { return '适用场景：一次试验仅有成功 / 失败两种结果，例如一次投篮是否命中。'; },
       caption(view, params) {
@@ -5637,7 +5637,7 @@ return Plotly;
       memory: [
         '几何分布的柱子从 k=1 开始，并且通常单调递减。',
         'p 越大，越容易“早成功”，所以质量会更集中在左侧。',
-        '它是负二项分布在 r=1 时的特例，也是离散型无记忆分布。'
+        '它刻画“第一次成功所需的试验次数”，也是离散型无记忆分布。'
       ],
       paramHelper() { return '本页面采用常见教材约定：X 表示“第一次成功所需的试验次数”，支持集从 1 开始。'; },
       caption(view, params) {
@@ -5701,58 +5701,6 @@ return Plotly;
         return view === 'cdf'
           ? '超几何分布的 CDF 同样是台阶函数，但跳跃区间由可行的整数支持集决定。'
           : '当前参数 N=' + params.N + ', M=' + params.M + ', n=' + params.n + '。如果把它和二项分布对照着看，最关键的记忆点就是“不放回”。';
-      }
-    },
-    {
-      id: 'negative-binomial',
-      name: '负二项分布',
-      shortName: '负二项分布',
-      category: '离散型分布',
-      nature: '离散',
-      dimension: '一维',
-      aliases: ['负二项', 'Negative binomial', 'Pascal', '第r次成功'],
-      description: '描述独立重复试验中，第 r 次成功恰好出现在第 k 次试验的概率。',
-      views: ['pmf', 'cdf'],
-      defaults: { r: 4, p: 0.45 },
-      getParams(params) {
-        return [
-          { key: 'r', label: '成功次数 r', min: 1, max: 15, step: 1, value: params.r, integer: true },
-          { key: 'p', label: '单次成功概率 p', min: 0.05, max: 0.95, step: 0.01, value: params.p }
-        ];
-      },
-      sanitize(params) {
-        params.r = Math.round(clamp(+params.r || 4, 1, 15));
-        params.p = clamp(+params.p || 0.45, 0.05, 0.95);
-      },
-      range(params) {
-        const upper = Math.min(80, Math.ceil(params.r / params.p + 6 * Math.sqrt(params.r * (1 - params.p) / (params.p * params.p))));
-        return [params.r - 0.5, upper + 0.5];
-      },
-      pmf(k, p) { return negBinomialPmf(k, p.r, p.p); },
-      cdf(x, p) { return negBinomialCdf(x, p.r, p.p); },
-      formula(view) {
-        return view === 'cdf'
-          ? 'F(x)=Σ[k=r..⌊x⌋] C(k-1,r-1) p^r (1-p)^(k-r)'
-          : 'P(X=k)=C(k-1,r-1) p^r (1-p)^(k-r),   k=r,r+1,...';
-      },
-      summary(params) {
-        return [
-          { label: '支持集', value: 'k=' + params.r + ', ' + (params.r + 1) + ', ...' },
-          { label: '期望', value: 'E[X]=r/p=' + fmt(params.r / params.p) },
-          { label: '方差', value: 'Var(X)=r(1-p)/p²=' + fmt(params.r * (1 - params.p) / (params.p * params.p)) },
-          { label: '特例', value: 'r=1 时退化为几何分布。' }
-        ];
-      },
-      memory: [
-        '几何分布只等待“第一次成功”，负二项分布则等待“第 r 次成功”。',
-        '当 r 增大时，峰值会向右移动，图像也会变得更宽。',
-        '最好的记忆方式是把它与“累计到第 r 次成功才停止”的故事场景绑定起来。'
-      ],
-      paramHelper() { return '本页面采用常见教材定义：X 表示“第 r 次成功所在的试验编号”，因此支持集从 r 开始。'; },
-      caption(view, params) {
-        return view === 'cdf'
-          ? '负二项分布的累计速度取决于“成功门槛” r 与单次成功概率 p 的双重作用。'
-          : '当前 r=' + params.r + ', p=' + fmt(params.p) + '。可以将它看成“几何分布的累积版本”，用于描述达到第 r 次成功前需要经历的试验次数。';
       }
     },
     {
@@ -5915,204 +5863,6 @@ return Plotly;
       }
     },
     {
-      id: 'gamma',
-      name: '伽马分布',
-      shortName: '伽马分布',
-      category: '连续型分布',
-      nature: '连续',
-      dimension: '一维',
-      aliases: ['伽马', 'Gamma', 'shape-scale', 'Erlang'],
-      description: '正实轴上的灵活分布，可用形状参数与尺度参数调节偏斜与峰值位置。',
-      views: ['pdf', 'cdf'],
-      defaults: { alpha: 3, theta: 1 },
-      getParams(params) {
-        return [
-          { key: 'alpha', label: '形状参数 α', min: 0.6, max: 10, step: 0.1, value: params.alpha },
-          { key: 'theta', label: '尺度参数 θ', min: 0.2, max: 3.5, step: 0.05, value: params.theta }
-        ];
-      },
-      sanitize(params) {
-        params.alpha = clamp(+params.alpha || 3, 0.6, 10);
-        params.theta = clamp(+params.theta || 1, 0.2, 3.5);
-      },
-      range(params) { return [0, Math.max(6, params.alpha * params.theta + 5 * Math.sqrt(params.alpha) * params.theta)]; },
-      pdf(x, p) { return gammaPdf(x, p.alpha, p.theta); },
-      cdf(x, p) { return gammaCdf(x, p.alpha, p.theta); },
-      formula(view) {
-        return view === 'cdf'
-          ? 'F(x)=γ(α, x/θ) / Γ(α),     x>0'
-          : 'f(x)=x^(α-1)e^(-x/θ) / [Γ(α) θ^α],   x>0';
-      },
-      summary(params) {
-        return [
-          { label: '支持集', value: 'x>0' },
-          { label: '期望', value: 'E[X]=αθ=' + fmt(params.alpha * params.theta) },
-          { label: '方差', value: 'Var(X)=αθ²=' + fmt(params.alpha * params.theta * params.theta) },
-          { label: '关联关系', value: 'α=1 时退化为指数分布；α 为正整数时与 Erlang 分布相关。' }
-        ];
-      },
-      memory: [
-        '伽马分布定义在正半轴上，通常呈右偏形，适合用来描述累计等待时间。',
-        'α 控制形状：较小时更尖、更贴近 0；较大时峰值更明显且向右移动。',
-        'θ 控制横向伸缩：θ 越大，图像整体被拉宽。'
-      ],
-      paramHelper() { return '建议先固定 θ，只拖动 α 观察形状变化；再固定 α，只拖动 θ 感受尺度变化。'; },
-      caption(view, params) {
-        return view === 'cdf'
-          ? '伽马分布 CDF 的上升速度会随着 α 与 θ 的变化明显改变，是理解参数影响的很好入口。'
-          : '当前 α=' + fmt(params.alpha) + ', θ=' + fmt(params.theta) + '。可以把它看成指数分布的推广版本。';
-      }
-    },
-    {
-      id: 'beta',
-      name: '贝塔分布',
-      shortName: '贝塔分布',
-      category: '连续型分布',
-      nature: '连续',
-      dimension: '一维',
-      aliases: ['贝塔', 'Beta', '概率分布', '0-1区间'],
-      description: '定义在 [0,1] 上的高可塑性连续分布，是概率参数建模中的重要工具。',
-      views: ['pdf', 'cdf'],
-      defaults: { alpha: 2, beta: 5 },
-      getParams(params) {
-        return [
-          { key: 'alpha', label: '形状参数 α', min: 0.6, max: 10, step: 0.1, value: params.alpha },
-          { key: 'beta', label: '形状参数 β', min: 0.6, max: 10, step: 0.1, value: params.beta }
-        ];
-      },
-      sanitize(params) {
-        params.alpha = clamp(+params.alpha || 2, 0.6, 10);
-        params.beta = clamp(+params.beta || 5, 0.6, 10);
-      },
-      range() { return [0, 1]; },
-      pdf(x, p) { return betaPdf(x, p.alpha, p.beta); },
-      cdf(x, p) { return betaCdf(x, p.alpha, p.beta); },
-      formula(view) {
-        return view === 'cdf'
-          ? 'F(x)=I_x(α,β),             0≤x≤1'
-          : 'f(x)=x^(α-1)(1-x)^(β-1) / B(α,β),   0<x<1';
-      },
-      summary(params) {
-        return [
-          { label: '支持集', value: '0<x<1' },
-          { label: '期望', value: 'E[X]=α/(α+β)=' + fmt(params.alpha / (params.alpha + params.beta)) },
-          { label: '方差', value: 'Var(X)=αβ/[(α+β)²(α+β+1)]=' + fmt((params.alpha * params.beta) / (((params.alpha + params.beta) ** 2) * (params.alpha + params.beta + 1))) },
-          { label: '特殊情形', value: 'α=β=1 时就是 [0,1] 上的均匀分布。' }
-        ];
-      },
-      memory: [
-        '贝塔分布全部集中在 [0,1] 区间，因此非常适合建模“概率本身”。',
-        'α 与 β 的相对大小决定峰偏左还是偏右；二者同时较大时，曲线更集中。',
-        '它能呈现多种形状：单峰、U 形、左偏、右偏，因此是最灵活的一维连续分布之一。'
-      ],
-      paramHelper() { return '试试将 α 与 β 分别设为小于 1、等于 1、大于 1，对比密度函数形状会非常有帮助。'; },
-      caption(view, params) {
-        return view === 'cdf'
-          ? '贝塔分布的 CDF 形状会随着 α、β 的不同组合发生显著变化，因此很适合作为“参数决定形状”的典型例子。'
-          : '当前 α=' + fmt(params.alpha) + ', β=' + fmt(params.beta) + '。把它与均匀分布（α=β=1）对照着看，能更快掌握图像变化规律。';
-      }
-    },
-    {
-      id: 'cauchy',
-      name: '柯西分布',
-      shortName: '柯西分布',
-      category: '连续型分布',
-      nature: '连续',
-      dimension: '一维',
-      aliases: ['柯西', 'Cauchy', 'heavy tail', 't1'],
-      description: '重尾分布的代表之一，看上去像正态分布，但尾部厚得多，且均值方差都不存在。',
-      views: ['pdf', 'cdf'],
-      defaults: { x0: 0, gamma: 1 },
-      getParams(params) {
-        return [
-          { key: 'x0', label: '位置参数 x0', min: -4, max: 4, step: 0.1, value: params.x0 },
-          { key: 'gamma', label: '尺度参数 γ', min: 0.2, max: 3, step: 0.05, value: params.gamma }
-        ];
-      },
-      sanitize(params) {
-        params.x0 = clamp(+params.x0 || 0, -4, 4);
-        params.gamma = clamp(+params.gamma || 1, 0.2, 3);
-      },
-      range(params) { return [params.x0 - 8 * params.gamma, params.x0 + 8 * params.gamma]; },
-      pdf(x, p) { return cauchyPdf(x, p.x0, p.gamma); },
-      cdf(x, p) { return cauchyCdf(x, p.x0, p.gamma); },
-      formula(view) {
-        return view === 'cdf'
-          ? 'F(x)=1/2 + (1/π) arctan((x-x0)/γ)'
-          : 'f(x)=1 / [πγ(1+((x-x0)/γ)^2)],   x∈R';
-      },
-      summary(params) {
-        return [
-          { label: '支持集', value: 'x∈R' },
-          { label: '位置参数', value: '中位数 / 众数 = x0 = ' + fmt(params.x0) },
-          { label: '尺度参数', value: 'γ=' + fmt(params.gamma) },
-          { label: '关键结论', value: '均值和方差都不存在。' }
-        ];
-      },
-      memory: [
-        '它看起来像正态分布，但尾部明显更厚，远离中心的位置仍保留较大概率密度。',
-        '最重要的记忆点不是峰值，而是“重尾”和“没有均值方差”。',
-        't 分布在自由度 ν=1 时就与柯西分布重合。'
-      ],
-      paramHelper() { return '如果想直观感受“重尾”，可将它与正态分布交替切换对比。'; },
-      caption(view, params) {
-        return view === 'cdf'
-          ? '柯西分布的 CDF 也是 S 形，但两端贴近 0 和 1 的速度比正态分布慢，这正是厚尾的反映。'
-          : '当前 x0=' + fmt(params.x0) + ', γ=' + fmt(params.gamma) + '。当 γ 增大时，峰变低、尾更宽。';
-      }
-    },
-    {
-      id: 'lognormal',
-      name: '对数正态分布',
-      shortName: '对数正态分布',
-      category: '连续型分布',
-      nature: '连续',
-      dimension: '一维',
-      aliases: ['对数正态', 'Lognormal', 'positive skew', '乘法过程'],
-      description: '若 ln X 服从正态分布，则 X 服从对数正态分布，常用于正值且右偏的数据建模。',
-      views: ['pdf', 'cdf'],
-      defaults: { mu: 0, sigma: 0.55 },
-      getParams(params) {
-        return [
-          { key: 'mu', label: '对数均值 μ', min: -1.5, max: 2, step: 0.05, value: params.mu },
-          { key: 'sigma', label: '对数标准差 σ', min: 0.2, max: 1.4, step: 0.05, value: params.sigma }
-        ];
-      },
-      sanitize(params) {
-        params.mu = clamp(+params.mu || 0, -1.5, 2);
-        params.sigma = clamp(+params.sigma || 0.55, 0.2, 1.4);
-      },
-      range(params) { return [0, Math.exp(params.mu + 4.4 * params.sigma)]; },
-      pdf(x, p) { return lognormalPdf(x, p.mu, p.sigma); },
-      cdf(x, p) { return lognormalCdf(x, p.mu, p.sigma); },
-      formula(view) {
-        return view === 'cdf'
-          ? 'F(x)=Φ((ln x-μ)/σ),        x>0'
-          : 'f(x)=[1/(xσ√(2π))] exp(-(ln x-μ)^2/(2σ^2)),   x>0';
-      },
-      summary(params) {
-        const mean = Math.exp(params.mu + params.sigma * params.sigma / 2);
-        const variance = (Math.exp(params.sigma * params.sigma) - 1) * Math.exp(2 * params.mu + params.sigma * params.sigma);
-        return [
-          { label: '支持集', value: 'x>0' },
-          { label: '期望', value: 'E[X]=e^(μ+σ²/2)=' + fmt(mean) },
-          { label: '方差', value: 'Var(X)=(e^(σ²)-1)e^(2μ+σ²)=' + fmt(variance) },
-          { label: '识别特征', value: '只取正值、明显右偏，且右尾较长。' }
-        ];
-      },
-      memory: [
-        '对数正态分布只定义在正半轴上，图像通常右偏且右尾较长。',
-        '如果把横轴取对数，它会与正态分布建立紧密联系。',
-        '很多乘法增长、收入规模、粒径等正值数据都常出现类似形状。'
-      ],
-      paramHelper() { return '拖动 σ，可以最明显地看到右偏与长尾程度的变化。'; },
-      caption(view, params) {
-        return view === 'cdf'
-          ? '对数正态分布的 CDF 前段上升较慢、后段逐渐贴近 1，与其右偏形状一致。'
-          : '当前 μ=' + fmt(params.mu) + ', σ=' + fmt(params.sigma) + '。记忆口诀：先取对数，再看正态。';
-      }
-    },
-    {
       id: 'chisquare',
       name: '卡方分布',
       shortName: '卡方分布',
@@ -6207,7 +5957,7 @@ return Plotly;
       caption(view, params) {
         return view === 'cdf'
           ? 't 分布的 CDF 也呈对称的 S 形，但比正态分布更慢进入两端，反映了更厚的尾部。'
-          : '当前自由度 ν=' + params.nu + '。若把 ν 调到 1，会更接近柯西分布；调大后会逐步逼近正态曲线。';
+          : '当前自由度 ν=' + params.nu + '。自由度较小时厚尾最明显；调大后会逐步逼近正态曲线。';
       }
     },
     {
