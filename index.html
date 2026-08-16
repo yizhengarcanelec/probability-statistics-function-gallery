@@ -342,6 +342,22 @@ html[data-theme="dark"] body {
   line-height: 1.15;
   letter-spacing: -0.03em;
 }
+.topbar-title { min-width: 0; }
+.editor-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  opacity: 0.62;
+}
+.editor-note a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.editor-note a:hover,
+.editor-note a:focus-visible { opacity: 0.9; }
 .theme-toggle {
   flex: 0 0 auto;
   display: inline-flex;
@@ -462,27 +478,37 @@ html[data-theme="dark"] body {
 }
 .view-tabs {
   margin-top: 18px;
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px;
+  border: 1px solid rgba(102,122,168,0.18);
+  border-radius: 18px;
+  background: rgba(232,238,252,0.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
 }
 .view-tab {
-  border: 1px solid rgba(102,122,168,0.14);
-  background: rgba(255,255,255,0.84);
-  color: #425485;
+  min-height: 42px;
+  border: 1px solid rgba(89,108,153,0.24);
+  background: rgba(255,255,255,0.92);
+  color: #34466f;
   border-radius: 14px;
-  padding: 11px 14px;
+  padding: 11px 16px;
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+  box-shadow: 0 4px 12px rgba(31,51,88,0.06);
+  transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
-.view-tab:hover { transform: translateY(-1px); border-color: rgba(106,92,255,0.24); }
+.view-tab:hover { transform: translateY(-1px); border-color: rgba(106,92,255,0.46); }
+.view-tab:focus-visible { outline: 3px solid rgba(106,92,255,0.24); outline-offset: 2px; }
 .view-tab.active {
   color: white;
   border-color: transparent;
   background: linear-gradient(135deg, #6a5cff, #00a9c6);
-  box-shadow: 0 10px 24px rgba(62, 82, 124, 0.16);
+  box-shadow: 0 10px 24px rgba(64, 76, 184, 0.28);
 }
 .formula-card {
   margin-top: 18px;
@@ -748,9 +774,25 @@ html[data-theme="dark"] .category-group,
 html[data-theme="dark"] .summary-item,
 html[data-theme="dark"] .control-item,
 html[data-theme="dark"] .number-input,
-html[data-theme="dark"] .view-tab,
 html[data-theme="dark"] .plot-caption {
   background: rgba(23, 33, 57, 0.88);
+}
+html[data-theme="dark"] .view-tabs {
+  background: rgba(10, 17, 31, 0.58);
+  border-color: rgba(146,166,214,0.20);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+html[data-theme="dark"] .view-tab {
+  color: #c5d0e8;
+  background: rgba(23,33,57,0.9);
+  border-color: rgba(146,166,214,0.22);
+  box-shadow: none;
+}
+html[data-theme="dark"] .view-tab.active {
+  color: #ffffff;
+  border-color: rgba(155,183,255,0.30);
+  background: linear-gradient(135deg, #7568ff, #009ebc);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.30), 0 0 0 1px rgba(151,177,255,0.12);
 }
 html[data-theme="dark"] .dist-item { background: rgba(24, 34, 58, 0.72); }
 html[data-theme="dark"] .dist-item.active {
@@ -786,6 +828,7 @@ html[data-theme="dark"] .footer-note { color: #add1df; }
   .topbar { min-height: 76px; }
   .theme-toggle { min-width: auto; }
   .theme-label { display: none; }
+  .editor-note { font-size: 9px; }
   .summary-grid, .controls-grid { grid-template-columns: 1fr; }
   .plot-holder { height: 430px; min-height: 430px; }
   .control-row { grid-template-columns: 1fr; }
@@ -829,7 +872,10 @@ html[data-theme="dark"] .footer-note { color: #add1df; }
 
   <main class="main">
     <header class="topbar card">
-      <h1>概率论函数库</h1>
+      <div class="topbar-title">
+        <h1>概率论函数库</h1>
+        <p class="editor-note">editor: plt contact: <a href="mailto:yizheng.arcanelec@gmail.com">yizheng.arcanelec@gmail.com</a></p>
+      </div>
       <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换页面明暗主题" aria-pressed="false">
         <span id="themeIcon" class="theme-icon" aria-hidden="true">☾</span>
         <span id="themeLabel" class="theme-label">深色模式</span>
@@ -5405,7 +5451,17 @@ return Plotly;
       });
     }
     const layout = baseLayout('', 'x', isCdf ? 'F(x)' : 'P(X=x)');
+    const maxTickLabels = 12;
+    const fixedRange = FIXED_VIEW_RANGES[dist.id] && FIXED_VIEW_RANGES[dist.id].x;
+    const visibleStart = fixedRange ? Math.ceil(fixedRange[0]) : xs[0];
+    const visibleEnd = fixedRange ? Math.floor(fixedRange[1]) : xs[xs.length - 1];
+    const visibleIntegerCount = Math.max(1, visibleEnd - visibleStart + 1);
+    const tickStep = Math.max(1, Math.ceil(visibleIntegerCount / maxTickLabels));
     layout.xaxis.tickmode = 'linear';
+    layout.xaxis.tick0 = visibleStart;
+    layout.xaxis.dtick = tickStep;
+    layout.xaxis.tickangle = 0;
+    layout.xaxis.automargin = true;
     if (isCdf) layout.yaxis.range = [0, 1.02];
     return { data: traces, layout, config: { displayModeBar: false, responsive: true } };
   }
@@ -6541,11 +6597,15 @@ return Plotly;
   function renderViewTabs(dist) {
     const current = getCurrentView(dist);
     els.viewTabs.innerHTML = '';
+    els.viewTabs.setAttribute('role', 'tablist');
+    els.viewTabs.setAttribute('aria-label', dist.name + '的图像类型');
     dist.views.forEach(function (view) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'view-tab' + (view === current ? ' active' : '');
       btn.textContent = viewLabel(dist, view);
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(view === current));
       btn.addEventListener('click', function () {
         state.currentViewByDist[dist.id] = view;
         renderSelection();
@@ -6783,8 +6843,18 @@ return Plotly;
   function plotThemeColors() {
     const dark = state.theme === 'dark';
     return dark
-      ? { font: '#dce5fa', grid: 'rgba(151,168,207,0.16)', zero: 'rgba(151,168,207,0.26)', hover: '#f5f7ff', hoverText: '#101626' }
-      : { font: '#203152', grid: COLORS.grid, zero: COLORS.zero, hover: '#121f3d', hoverText: '#ffffff' };
+      ? {
+          font: '#dce5fa', grid: 'rgba(151,168,207,0.20)', zero: 'rgba(151,168,207,0.34)',
+          axisLine: 'rgba(183,198,231,0.48)',
+          sceneGrid: '#53627d', sceneZero: '#8593ae', sceneAxisLine: '#aab8d2', axisBg: '#111a2e', sceneBg: '#0d1527',
+          hover: '#f5f7ff', hoverText: '#101626'
+        }
+      : {
+          font: '#203152', grid: 'rgba(72,94,145,0.22)', zero: 'rgba(61,82,132,0.34)',
+          axisLine: 'rgba(45,63,105,0.58)',
+          sceneGrid: '#55647f', sceneZero: '#34435f', sceneAxisLine: '#24334f', axisBg: '#ffffff', sceneBg: '#ffffff',
+          hover: '#121f3d', hoverText: '#ffffff'
+        };
   }
 
   function applyPlotTheme(spec) {
@@ -6795,14 +6865,38 @@ return Plotly;
     ['xaxis', 'yaxis'].forEach(function (axisName) {
       const axis = spec.layout[axisName];
       if (!axis) return;
+      axis.color = colors.font;
       axis.gridcolor = colors.grid;
       axis.zerolinecolor = colors.zero;
+      axis.linecolor = colors.axisLine;
+      axis.tickcolor = colors.axisLine;
+      axis.showline = true;
+      axis.ticks = 'outside';
+      axis.tickfont = Object.assign({}, axis.tickfont, { color: colors.font });
+      axis.title = Object.assign({}, typeof axis.title === 'object' ? axis.title : { text: axis.title }, { font: { color: colors.font } });
     });
     if (spec.layout.scene) {
+      spec.layout.scene.bgcolor = colors.sceneBg;
       ['xaxis', 'yaxis', 'zaxis'].forEach(function (axisName) {
-        spec.layout.scene[axisName].gridcolor = colors.grid;
-        spec.layout.scene[axisName].zerolinecolor = colors.zero;
-        spec.layout.scene[axisName].color = colors.font;
+        const axis = spec.layout.scene[axisName];
+        axis.backgroundcolor = colors.axisBg;
+        axis.showbackground = true;
+        axis.showgrid = true;
+        axis.gridcolor = colors.sceneGrid;
+        axis.gridwidth = 2;
+        axis.zeroline = true;
+        axis.zerolinecolor = colors.sceneZero;
+        axis.zerolinewidth = 3;
+        axis.showline = true;
+        axis.linecolor = colors.sceneAxisLine;
+        axis.linewidth = 2;
+        axis.ticks = 'outside';
+        axis.tickcolor = colors.sceneAxisLine;
+        axis.tickwidth = 2;
+        axis.ticklen = 6;
+        axis.color = colors.font;
+        axis.tickfont = Object.assign({}, axis.tickfont, { color: colors.font });
+        axis.title = Object.assign({}, typeof axis.title === 'object' ? axis.title : { text: axis.title }, { font: { color: colors.font } });
       });
     }
     return spec;
